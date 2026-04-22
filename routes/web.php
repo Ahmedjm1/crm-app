@@ -75,6 +75,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
+    // Delete Later
+    Route::get('/test', function () {
+    return view('test');
+});
+
+Route::post('/test', function () {
+    session(['test' => 'working']);
+    return redirect('/test')->with('success', 'POST worked');
+});
+
 });
 
 require __DIR__.'/auth.php';
