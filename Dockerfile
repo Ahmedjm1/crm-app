@@ -37,7 +37,6 @@ RUN npm run build
 
 # Laravel optimizations
 RUN php artisan config:clear
-RUN php artisan cache:clear
 
 # Start app
-CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT
+CMD php artisan config:clear && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT
