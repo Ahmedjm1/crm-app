@@ -6,7 +6,9 @@ RUN apt-get update && apt-get install -y \
     git \
     curl \
     libzip-dev \
-    zip
+    zip \
+    nodejs \
+    npm
 
 # Install PHP extensions
 RUN docker-php-ext-install pdo pdo_mysql zip
@@ -20,11 +22,22 @@ WORKDIR /app
 # Copy project
 COPY . .
 
-# Install PHP dependencies
+# Install PHP deps
 RUN composer install --no-dev --optimize-autoloader
 
-# Generate app key & cache config (optional safety)
+# Install Node 20 (IMPORTANT FIX)
+RUN npm install -g n
+RUN n 20
+
+# Install frontend deps
+RUN npm install
+
+# Build assets (THIS FIXES YOUR ERROR)
+RUN npm run build
+
+# Laravel optimizations
 RUN php artisan config:clear
+RUN php artisan cache:clear
 
 # Start app
 CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT
