@@ -80,11 +80,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     return view('test');
 });
 
+
+
+});
 Route::post('/test', function () {
     session(['test' => 'working']);
     return redirect('/test')->with('success', 'POST worked');
 });
-
-});
-
 require __DIR__.'/auth.php';
