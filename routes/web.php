@@ -29,7 +29,10 @@ Route::post('/email/verification-notification', function (Request $request) {
 Route::get('/', function () {
     return view('welcome');
 });
-
+Route::post('/test', function () {
+    session(['test' => 'working']);
+    return redirect('/test')->with('success', 'POST worked');
+});
 /*
 |--------------------------------------------------------------------------
 | Protected Routes (Auth + Verified)
@@ -83,8 +86,5 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 
 });
-Route::post('/test', function () {
-    session(['test' => 'working']);
-    return redirect('/test')->with('success', 'POST worked');
-});
+
 require __DIR__.'/auth.php';
