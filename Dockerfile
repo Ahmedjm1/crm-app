@@ -6,37 +6,34 @@ RUN apt-get update && apt-get install -y \
     git \
     curl \
     libzip-dev \
-    zip \
-    nodejs \
-    npm
+    zip
 
 # Install PHP extensions
 RUN docker-php-ext-install pdo pdo_mysql zip
 
+# Install Node.js 20 (CORRECT WAY)
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+RUN apt-get install -y nodejs
+
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Set working directory
 WORKDIR /app
 
 # Copy project
 COPY . .
 
-# Install PHP deps
+# Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Install Node 20 (IMPORTANT FIX)
-RUN npm install -g n
-RUN n 20
-
-# Install frontend deps
+# Install frontend dependencies
 RUN npm install
 
-# Build assets (THIS FIXES YOUR ERROR)
+# Build Vite assets (CRITICAL)
 RUN npm run build
 
-# Laravel optimizations
+# Clear cache
 RUN php artisan config:clear
 
 # Start app
-CMD php artisan config:clear && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT
+CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT
