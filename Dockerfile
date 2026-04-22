@@ -33,7 +33,6 @@ RUN npm install
 RUN npm run build
 
 # Clear cache
-RUN php artisan config:clear
 
 # Start app
-CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT
+CMD php artisan config:clear && php artisan config:cache && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT
