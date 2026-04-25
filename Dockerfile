@@ -35,4 +35,4 @@ RUN npm run build
 # Clear cache
 
 # Start app
-CMD php artisan config:clear && php artisan config:cache && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT
+CMD php artisan config:clear && php artisan config:cache && php artisan migrate --force && php artisan queue:work --daemon &amp; php artisan serve --host=0.0.0.0 --port=$PORT
