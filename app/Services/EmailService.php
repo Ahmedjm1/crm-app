@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use Resend;
+use Resend\Client;
 
 class EmailService
 {
@@ -10,7 +10,7 @@ class EmailService
 
     public function __construct()
     {
-        $this->resend = new Resend(env('RESEND_API_KEY'));
+        $this->resend = new Client(env('RESEND_API_KEY'));
     }
 
     public function sendWelcomeEmail($user)
