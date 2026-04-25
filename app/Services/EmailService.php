@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use Resend\Resend;
+use Resend;
 
 class EmailService
 {
