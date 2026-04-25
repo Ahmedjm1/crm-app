@@ -2,20 +2,16 @@
 
 namespace App\Services;
 
-use Resend\Client;
+use Illuminate\Support\Facades\Http;
 
 class EmailService
 {
-    protected $resend;
-
-    public function __construct()
-    {
-        $this->resend = new Client(env('RESEND_API_KEY'));
-    }
-
     public function sendWelcomeEmail($user)
     {
-        return $this->resend->emails->send([
+        return Http::withHeaders([
+            'Authorization' => 'Bearer ' . env('RESEND_API_KEY'),
+            'Content-Type' => 'application/json',
+        ])->post('https://api.resend.com/emails', [
             'from' => 'onboarding@resend.dev',
             'to' => $user->email,
             'subject' => 'Welcome to CRM',
