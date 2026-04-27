@@ -1,9 +1,12 @@
+```html
 <x-app-layout>
     <div class="p-6">
-         <!-- Title -->
+        
+        <!-- Title -->
         <h1 class="text-3xl font-semibold text-gray-100 mb-6 border-b border-gray-700 pb-2">
             Customers
         </h1>
+
         <!-- Top Section -->
         <div class="flex justify-between items-center mb-4">
             
@@ -13,12 +16,12 @@
                     type="text" 
                     id="search"
                     placeholder="Search customers..." 
-                    class="border border-gray-300 rounded-lg px-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    class="border border-gray-300 rounded-lg px-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
             </div>
 
-            <!-- Add Button -->
-            <a href="/customers/create" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">
+            <!-- 🔥 Add Button (gradient) -->
+            <a href="/customers/create" class="btn btn-primary">
                 + Add Customer
             </a>
 
@@ -35,14 +38,25 @@
                             <p class="text-sm text-gray-500">{{ $customer->phone }}</p>
                         </div>
 
-                        <div class="flex gap-3">
-                            <a href="/customers/{{ $customer->id }}/edit" class="text-blue-500">Edit</a>
+                        <!-- 🔥 Actions -->
+                        <div class="flex items-center gap-2">
 
-                            <form action="/customers/{{ $customer->id }}" method="POST">
+                            <!-- Edit -->
+                            <a href="/customers/{{ $customer->id }}/edit" class="btn btn-secondary">
+                                Edit
+                            </a>
+
+                            <!-- Delete -->
+                            <form action="/customers/{{ $customer->id }}" method="POST"
+                                  onsubmit="return confirm('Delete this customer?')">
                                 @csrf
                                 @method('DELETE')
-                                <button class="text-red-500">Delete</button>
+
+                                <button type="submit" class="btn btn-danger">
+                                    Delete
+                                </button>
                             </form>
+
                         </div>
 
                     </li>
@@ -79,3 +93,4 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
+```
