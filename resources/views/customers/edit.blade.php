@@ -1,4 +1,3 @@
-```html
 <x-app-layout>
     <div style="padding:20px; max-width:500px; margin:auto;">
         <h1 style="font-size:22px; margin-bottom:15px;">Edit Customer</h1>

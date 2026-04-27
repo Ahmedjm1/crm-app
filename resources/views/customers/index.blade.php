@@ -1,4 +1,3 @@
-```html
 <x-app-layout>
     <div class="p-6">
         
@@ -93,4 +92,3 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
-```
