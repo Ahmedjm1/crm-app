@@ -111,3 +111,5 @@ Route::middleware('firebase.auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update']);
     Route::delete('/profile', [ProfileController::class, 'destroy']);
 });
+
+require __DIR__.'/auth.php';
