@@ -4,14 +4,12 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
-use App\Services\EmailService;
 
 class RegisteredUserController extends Controller
 {
@@ -26,7 +24,7 @@ class RegisteredUserController extends Controller
     /**
      * Handle an incoming registration request.
      */
-    public function store(Request $request, EmailService $emailService): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -41,13 +39,13 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        // 2. Send welcome email via Resend API (NO SMTP)
-        $emailService->sendWelcomeEmail($user);
+        // 2. Queue verification email (non-blocking)
+        $user->sendEmailVerificationNotification();
 
         // 3. Log user in
         Auth::login($user);
 
-        // 4. Redirect
-        return redirect(route('dashboard', absolute: false));
+        // 4. Redirect to verification page
+        return redirect(route('verification.notice', absolute: false));
     }
 }
