@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
-use App\Services\EmailService;
 
 class RegisteredUserController extends Controller
 {
@@ -26,7 +25,7 @@ class RegisteredUserController extends Controller
     /**
      * Handle an incoming registration request.
      */
-    public function store(Request $request, EmailService $emailService): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -34,20 +33,20 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        // 1. Create user
+        // Create user
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
 
-        // 2. Send welcome email via Resend API (NO SMTP)
-        $emailService->sendWelcomeEmail($user);
+        // ✅ Laravel handles email verification
+        event(new Registered($user));
 
-        // 3. Log user in
+        // Login user
         Auth::login($user);
 
-        // 4. Redirect
-        return redirect(route('dashboard', absolute: false));
+        // Redirect to verify page
+        return redirect()->route('verification.notice');
     }
 }

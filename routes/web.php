@@ -5,11 +5,44 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DealController;
 use App\Http\Controllers\FollowUpController;
+use App\Http\Controllers\Auth\FirebaseAuthController;
+
 use App\Models\Customer;
 use App\Models\Deal;
 use App\Models\FollowUp;
+
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
+
+/*
+|--------------------------------------------------------------------------
+| Firebase Auth Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::post('/firebase-register', [FirebaseAuthController::class, 'register']);
+Route::post('/firebase-login', [FirebaseAuthController::class, 'login']);
+
+/*
+|--------------------------------------------------------------------------
+| Logout (IMPORTANT for Firebase session auth)
+|--------------------------------------------------------------------------
+*/
+
+Route::post('/logout', function (Request $request) {
+    Auth::logout();
+
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+
+    return redirect('/login');
+})->name('logout');
+
+/*
+|--------------------------------------------------------------------------
+| Email Verification Routes (Laravel default)
+|--------------------------------------------------------------------------
+*/
 
 Route::get('/email/verify', function () {
     return view('auth.verify-email');
@@ -17,15 +50,30 @@ Route::get('/email/verify', function () {
 
 Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
     $request->fulfill();
-
     return redirect('/dashboard');
 })->middleware(['auth', 'signed'])->name('verification.verify');
 
 Route::post('/email/verification-notification', function (Request $request) {
-    $request->user()->sendEmailVerificationNotification();
 
-    return back()->with('message', 'Verification link sent!');
+    $user = auth()->user();
+
+    $response = Http::post(
+        'https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=' . env('FIREBASE_API_KEY'),
+        [
+            'requestType' => 'VERIFY_EMAIL',
+            'idToken' => session('firebase_id_token'), // we will store this
+        ]
+    );
+
+    return back()->with('status', 'verification-link-sent');
 })->middleware(['auth', 'throttle:6,1'])->name('verification.send');
+
+/*
+|--------------------------------------------------------------------------
+| Public Routes
+|--------------------------------------------------------------------------
+*/
+
 Route::get('/', function () {
     return view('welcome');
 });
@@ -74,7 +122,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-
 });
+
+/*
+|--------------------------------------------------------------------------
+| Laravel Auth Routes (Breeze fallback)
+|--------------------------------------------------------------------------
+*/
 
 require __DIR__.'/auth.php';
