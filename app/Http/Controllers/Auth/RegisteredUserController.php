@@ -1,52 +1,46 @@
-<?php
-
-namespace App\Http\Controllers\Auth;
-
-use App\Http\Controllers\Controller;
-use App\Models\User;
-use Illuminate\Auth\Events\Registered;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules;
-use Illuminate\View\View;
-
-class RegisteredUserController extends Controller
+public function store(Request $request)
 {
-    /**
-     * Display the registration view.
-     */
-    public function create(): View
-    {
-        return view('auth.register');
-    }
+    $request->validate([
+        'name' => ['required', 'string', 'max:255'],
+        'email' => ['required', 'email'],
+        'password' => ['required', 'min:6'],
+    ]);
 
-    /**
-     * Handle an incoming registration request.
-     */
-    public function store(Request $request): RedirectResponse
-    {
-        $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        ]);
-
-        // Create user
-        $user = User::create([
-            'name' => $request->name,
+    // 🔥 Create Firebase account
+    $response = Http::post(
+        'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=' . env('FIREBASE_API_KEY'),
+        [
             'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'password' => $request->password,
+            'returnSecureToken' => true,
+        ]
+    );
+
+    $data = $response->json();
+
+    if (!$response->successful() || isset($data['error'])) {
+        return back()->withErrors([
+            'email' => $data['error']['message'] ?? 'Registration failed'
         ]);
-
-        // ✅ Laravel handles email verification
-        event(new Registered($user));
-
-        // Login user
-        Auth::login($user);
-
-        // Redirect to verify page
-        return redirect()->route('verification.notice');
     }
+
+    // 🔥 Send verification email (Firebase)
+    Http::post(
+        'https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=' . env('FIREBASE_API_KEY'),
+        [
+            'requestType' => 'VERIFY_EMAIL',
+            'idToken' => $data['idToken'],
+        ]
+    );
+
+    // 🔥 Optional: store user locally (NO AUTH)
+    User::updateOrCreate(
+        ['email' => $request->email],
+        [
+            'name' => $request->name,
+            'password' => bcrypt('firebase-user'),
+        ]
+    );
+
+    return redirect('/login')->with('status', 'Check your email to verify your account.');
 }

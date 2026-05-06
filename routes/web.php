@@ -1,7 +1,10 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Request;
+
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DealController;
 use App\Http\Controllers\FollowUpController;
@@ -10,9 +13,6 @@ use App\Http\Controllers\Auth\FirebaseAuthController;
 use App\Models\Customer;
 use App\Models\Deal;
 use App\Models\FollowUp;
-
-use Illuminate\Foundation\Auth\EmailVerificationRequest;
-use Illuminate\Http\Request;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,12 +25,14 @@ Route::post('/firebase-login', [FirebaseAuthController::class, 'login']);
 
 /*
 |--------------------------------------------------------------------------
-| Logout (IMPORTANT for Firebase session auth)
+| Logout (Firebase session logout)
 |--------------------------------------------------------------------------
 */
 
 Route::post('/logout', function (Request $request) {
-    Auth::logout();
+
+    session()->forget('firebase_user');
+    session()->forget('firebase_id_token');
 
     $request->session()->invalidate();
     $request->session()->regenerateToken();
@@ -40,33 +42,22 @@ Route::post('/logout', function (Request $request) {
 
 /*
 |--------------------------------------------------------------------------
-| Email Verification Routes (Laravel default)
+| Email Verification (Firebase)
 |--------------------------------------------------------------------------
 */
 
-Route::get('/email/verify', function () {
-    return view('auth.verify-email');
-})->middleware('auth')->name('verification.notice');
+Route::post('/email/verification-notification', function () {
 
-Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
-    $request->fulfill();
-    return redirect('/dashboard');
-})->middleware(['auth', 'signed'])->name('verification.verify');
-
-Route::post('/email/verification-notification', function (Request $request) {
-
-    $user = auth()->user();
-
-    $response = Http::post(
+    Http::post(
         'https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=' . env('FIREBASE_API_KEY'),
         [
             'requestType' => 'VERIFY_EMAIL',
-            'idToken' => session('firebase_id_token'), // we will store this
+            'idToken' => session('firebase_id_token'),
         ]
     );
 
     return back()->with('status', 'verification-link-sent');
-})->middleware(['auth', 'throttle:6,1'])->name('verification.send');
+})->name('verification.send');
 
 /*
 |--------------------------------------------------------------------------
@@ -74,27 +65,24 @@ Route::post('/email/verification-notification', function (Request $request) {
 |--------------------------------------------------------------------------
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', fn () => view('welcome'));
 
 /*
 |--------------------------------------------------------------------------
-| Protected Routes (Auth + Verified)
+| Firebase Protected Routes (NO Laravel auth middleware)
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware('firebase.auth')->group(function () {
 
-    // Dashboard
     Route::get('/dashboard', function () {
+
         return view('dashboard', [
-            'customersCount' => Customer::where('user_id', auth()->id())->count(),
-            'dealsCount' => Deal::where('user_id', auth()->id())->count(),
-            'followUpsCount' => FollowUp::where('user_id', auth()->id())
-                ->where('is_done', false)
-                ->count(),
+            'customersCount' => Customer::count(),
+            'dealsCount' => Deal::count(),
+            'followUpsCount' => FollowUp::where('is_done', false)->count(),
         ]);
+
     })->name('dashboard');
 
     // Customers
@@ -119,15 +107,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/followups', [FollowUpController::class, 'store']);
 
     // Profile
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/profile', [ProfileController::class, 'edit']);
+    Route::patch('/profile', [ProfileController::class, 'update']);
+    Route::delete('/profile', [ProfileController::class, 'destroy']);
 });
-
-/*
-|--------------------------------------------------------------------------
-| Laravel Auth Routes (Breeze fallback)
-|--------------------------------------------------------------------------
-*/
-
-require __DIR__.'/auth.php';

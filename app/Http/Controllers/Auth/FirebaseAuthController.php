@@ -5,6 +5,7 @@ public function login(Request $request)
         'password' => 'required',
     ]);
 
+    // 🔥 Firebase login request
     $response = Http::post(
         'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=' . env('FIREBASE_API_KEY'),
         [
@@ -38,23 +39,25 @@ public function login(Request $request)
         ]);
     }
 
-    // 🔥 Find or create local user
+    // 🔥 Create or update local user (optional sync)
     $user = User::updateOrCreate(
         ['email' => $request->email],
         [
-            'name' => $data['displayName'] ?? 'Firebase User',
+            'name' => $userInfo['users'][0]['displayName'] ?? 'Firebase User',
             'password' => bcrypt('firebase-user'),
         ]
     );
 
-    // 🔥 Session fix
+    // 🔥 CLEAN SESSION (NO Laravel Auth)
     $request->session()->regenerate();
 
-    // ✅ ADD THIS LINE HERE (IMPORTANT)
-    session(['firebase_id_token' => $data['idToken']]);
-
-    // 🔥 Login
-    Auth::login($user, true);
+    session([
+        'firebase_user' => [
+            'email' => $request->email,
+            'idToken' => $data['idToken'],
+            'uid' => $data['localId'],
+        ]
+    ]);
 
     return redirect('/dashboard');
 }
