@@ -23,6 +23,10 @@ WORKDIR /app
 # Copy project
 COPY . .
 
+# Fix storage and cache directory permissions
+RUN chmod -R 775 storage bootstrap/cache
+RUN chown -R www-data:www-data storage bootstrap/cache
+
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
@@ -32,7 +36,9 @@ RUN npm install
 # Build Vite assets (CRITICAL)
 RUN npm run build
 
-# Clear cache
-
 # Start app
-CMD php artisan config:clear && php artisan config:cache && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT
+CMD php artisan config:clear && \
+    php artisan cache:clear && \
+    php artisan config:cache && \
+    php artisan migrate --force && \
+    php artisan serve --host=0.0.0.0 --port=$PORT
